@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#111827" />
+  <title>Hogares | Musicala</title>
+
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🏠</div>
+      <div class="brand-txt">
+        <div class="title">Hogares | Musicala</div>
+        <div class="subtitle">PWA offline para arreglar, comprar y reponer cosas (sí, shampoo también)</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btnExport" class="btn">Exportar</button>
+      <label class="btn file-btn" for="importFile">Importar</label>
+      <input id="importFile" type="file" accept="application/json" hidden />
+      <button id="btnNew" class="btn primary">+ Nuevo</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Filtros</h2>
+        <button id="btnSeed" class="btn ghost" title="Crea ejemplos y plantillas rápidas">Plantillas ⚡</button>
+      </div>
+
+      <div class="filters">
+        <div class="field">
+          <label for="placeSelect">Lugar</label>
+          <select id="placeSelect"></select>
+        </div>
+
+        <div class="field">
+          <label for="statusFilter">Estado</label>
+          <select id="statusFilter">
+            <option value="all">Todos</option>
+            <option value="todo">Pendiente</option>
+            <option value="doing">En proceso</option>
+            <option value="done">Hecho</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="typeFilter">Tipo</label>
+          <select id="typeFilter">
+            <option value="all">Todos</option>
+            <option value="reparar">Arreglar</option>
+            <option value="comprar">Comprar</option>
+            <option value="reponer">Reponer</option>
+            <option value="mejorar">Mejorar</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="priorityFilter">Prioridad</label>
+          <select id="priorityFilter">
+            <option value="all">Todas</option>
+            <option value="3">Alta</option>
+            <option value="2">Media</option>
+            <option value="1">Baja</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="categoryFilter">Categoría</label>
+          <select id="categoryFilter"></select>
+        </div>
+
+        <div class="field span-2">
+          <label for="q">Buscar</label>
+          <input id="q" type="search" placeholder="Ej: pared, bombillo, arena, shampoo..." />
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="statTodo">0</div>
+          <div class="stat-lbl">Pendientes</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="statDoing">0</div>
+          <div class="stat-lbl">En proceso</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num" id="statDone">0</div>
+          <div class="stat-lbl">Hechos</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Lista</h2>
+        <div class="muted" id="listHint">Todo queda guardado local. Offline real.</div>
+      </div>
+
+      <div id="list" class="list"></div>
+
+      <div id="empty" class="empty" hidden>
+        <div class="empty-emoji">🧼</div>
+        <div class="empty-title">No hay nada aquí</div>
+        <div class="empty-sub">Agrega algo. O ignóralo y espera a que se dañe más, típico.</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: NUEVO / EDITAR -->
+  <dialog id="taskModal" class="modal">
+    <form id="taskForm" method="dialog" class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="modalTitle">Nueva tarea</div>
+          <div class="modal-sub">Arreglar / comprar / reponer por lugar.</div>
+        </div>
+        <button type="button" id="btnClose" class="btn icon ghost" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="taskId" />
+
+        <div class="grid">
+          <div class="field span-2">
+            <label for="title">Título</label>
+            <input id="title" required maxlength="80" placeholder="Ej: Comprar shampoo" />
+          </div>
+
+          <div class="field span-2">
+            <label for="notes">Notas</label>
+            <textarea id="notes" rows="3" maxlength="400" placeholder="Detalles, medidas, marca, referencia..."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="place">Lugar</label>
+            <select id="place"></select>
+          </div>
+
+          <div class="field">
+            <label for="type">Tipo</label>
+            <select id="type">
+              <option value="reparar">Arreglar</option>
+              <option value="comprar">Comprar</option>
+              <option value="reponer">Reponer</option>
+              <option value="mejorar">Mejorar</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="category">Categoría</label>
+            <select id="category"></select>
+          </div>
+
+          <div class="field">
+            <label for="priority">Prioridad</label>
+            <select id="priority">
+              <option value="3">Alta</option>
+              <option value="2" selected>Media</option>
+              <option value="1">Baja</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="status">Estado</label>
+            <select id="status">
+              <option value="todo" selected>Pendiente</option>
+              <option value="doing">En proceso</option>
+              <option value="done">Hecho</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="dueDate">Vence</label>
+            <input id="dueDate" type="date" />
+          </div>
+
+          <div class="field span-2">
+            <label for="cost">Costo estimado (COP)</label>
+            <input id="cost" inputmode="numeric" placeholder="Ej: 120000" />
+          </div>
+
+          <div class="field span-2">
+            <label class="check">
+              <input type="checkbox" id="recurring" />
+              <span>Recurrente (genera la próxima al marcar “Hecho”)</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label for="everyDays">Cada (días)</label>
+            <input id="everyDays" type="number" min="1" max="365" value="30" />
+          </div>
+
+          <div class="field">
+            <label for="nextHint">Próxima sugerida</label>
+            <input id="nextHint" type="text" disabled />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button type="button" id="btnDelete" class="btn danger" hidden>Eliminar</button>
+        <div class="spacer"></div>
+        <button type="button" id="btnCancel" class="btn">Cancelar</button>
+        <button type="submit" class="btn primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <div class="muted">LocalStorage • Offline • PWA • Hecho para Alek & Cata 🫶</div>
+  </footer>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
