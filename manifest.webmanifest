@@ -1,14 +1,51 @@
 {
+  "id": "./?app=hogares",
   "name": "Hogares | Musicala",
   "short_name": "Hogares",
   "description": "PWA offline para seguimiento por lugar (arreglar, comprar, reponer).",
-  "start_url": "./index.html",
+  "lang": "es-CO",
+  "dir": "ltr",
+
+  "start_url": "./?source=pwa",
   "scope": "./",
+
   "display": "standalone",
-  "background_color": "#0b1220",
-  "theme_color": "#111827",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+
+  "background_color": "#F7F9FF",
+  "theme_color": "#FFFFFF",
+
   "icons": [
-    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "categories": ["productivity", "utilities", "lifestyle"],
+
+  "shortcuts": [
+    {
+      "name": "Nueva tarea",
+      "short_name": "Nuevo",
+      "description": "Crear una tarea nueva",
+      "url": "./?action=new",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ajustes",
+      "short_name": "Ajustes",
+      "description": "Configurar lugares y categorías",
+      "url": "./?action=settings",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
