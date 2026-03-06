@@ -1,8 +1,11 @@
 {
   "id": "./?app=hogares",
+
   "name": "Hogares | Musicala",
   "short_name": "Hogares",
-  "description": "PWA offline para seguimiento por lugar (arreglar, comprar, reponer).",
+
+  "description": "PWA offline para organizar tareas del hogar y espacios de Musicala: arreglar, comprar, reponer o mejorar.",
+
   "lang": "es-CO",
   "dir": "ltr",
 
@@ -10,10 +13,24 @@
   "scope": "./",
 
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+
+  "orientation": "portrait",
 
   "background_color": "#F7F9FF",
   "theme_color": "#FFFFFF",
+
+  "categories": [
+    "productivity",
+    "utilities",
+    "lifestyle"
+  ],
+
+  "prefer_related_applications": false,
 
   "icons": [
     {
@@ -27,10 +44,14 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-
-  "categories": ["productivity", "utilities", "lifestyle"],
 
   "shortcuts": [
     {
@@ -38,14 +59,75 @@
       "short_name": "Nuevo",
       "description": "Crear una tarea nueva",
       "url": "./?action=new",
-      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Ajustes",
       "short_name": "Ajustes",
       "description": "Configurar lugares y categorías",
       "url": "./?action=settings",
-      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ver tareas",
+      "short_name": "Tareas",
+      "description": "Abrir lista de tareas",
+      "url": "./",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
-  ]
+  ],
+
+  "screenshots": [
+    {
+      "src": "./screenshots/screen1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Vista de tareas"
+    },
+    {
+      "src": "./screenshots/screen2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Panel de estadísticas"
+    }
+  ],
+
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+
+  "protocol_handlers": [
+    {
+      "protocol": "web+hogares",
+      "url": "./?action=%s"
+    }
+  ],
+
+  "file_handlers": [
+    {
+      "action": "./?import=true",
+      "accept": {
+        "application/json": [".json"]
+      }
+    }
+  ],
+
+  "edge_side_panel": {
+    "preferred_width": 420
+  }
 }
