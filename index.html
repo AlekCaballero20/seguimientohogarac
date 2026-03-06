@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#F8FAFC" />
   <meta name="color-scheme" content="light" />
-  <meta name="description" content="PWA offline para arreglar, comprar y reponer cosas por lugar en Musicala." />
+  <meta
+    name="description"
+    content="PWA offline para arreglar, comprar, reponer y mejorar cosas por lugar en Musicala."
+  />
 
   <title>Hogares | Musicala</title>
 
@@ -18,7 +21,7 @@
 <body>
   <noscript>
     <div style="padding:12px; margin:12px; border-radius:12px; background:#fff3cd; color:#1f2937; border:1px solid #fcd34d;">
-      Esta app necesita JavaScript para funcionar. Sí, es 2026 y aún toca decirlo 🙃
+      Esta app necesita JavaScript para funcionar. Seguimos en una época extraña 🙃
     </div>
   </noscript>
 
@@ -27,56 +30,176 @@
       <div class="logo" aria-hidden="true">🏠</div>
       <div class="brand-txt">
         <div class="title">Hogares | Musicala</div>
-        <div class="subtitle">PWA offline para arreglar, comprar y reponer cosas (sí, shampoo también)</div>
+        <div class="subtitle">
+          PWA offline para arreglar, comprar, reponer y mejorar cosas por lugar
+        </div>
       </div>
     </div>
 
     <div class="top-actions" aria-label="Acciones">
-      <!-- Accesos rápidos (sin romper el JS actual) -->
-      <button id="btnStats" class="btn icon ghost" type="button" title="Ver estadísticas" aria-label="Ver estadísticas">
+      <button
+        id="btnStats"
+        class="btn icon ghost"
+        type="button"
+        title="Ver estadísticas"
+        aria-label="Ver estadísticas"
+      >
         📊
       </button>
 
-      <button id="btnSettings" class="btn icon ghost" type="button" title="Ajustes" aria-label="Ajustes">
+      <button
+        id="btnSettings"
+        class="btn icon ghost"
+        type="button"
+        title="Ajustes"
+        aria-label="Ajustes"
+      >
         ⚙️
       </button>
 
-      <!-- Menú compacto para Exportar / Importar -->
       <details class="menu" id="moreMenu">
-        <summary class="btn icon ghost" title="Más acciones" aria-label="Más acciones">
+        <summary
+          class="btn icon ghost"
+          title="Más acciones"
+          aria-label="Más acciones"
+        >
           ⋯
         </summary>
 
         <div class="menu-panel" role="menu" aria-label="Acciones adicionales">
           <button id="btnExport" class="btn" type="button" role="menuitem">
-            Exportar
+            Exportar JSON
+          </button>
+
+          <button id="btnExportCsv" class="btn" type="button" role="menuitem">
+            Exportar CSV
           </button>
 
           <label class="btn file-btn" for="importFile" role="menuitem" tabindex="0">
-            Importar
+            Importar JSON
           </label>
           <input id="importFile" type="file" accept="application/json" hidden />
         </div>
       </details>
 
-      <!-- Acción principal -->
-      <button id="btnNew" class="btn primary" type="button" aria-label="Crear nueva tarea">
+      <button
+        id="btnNew"
+        class="btn primary"
+        type="button"
+        aria-label="Crear nueva tarea"
+      >
         + Nuevo
       </button>
     </div>
   </header>
 
   <main class="wrap" role="main">
+    <!-- RESUMEN RÁPIDO -->
+    <section class="panel hero-panel" aria-label="Resumen general">
+      <div class="panel-head">
+        <div>
+          <h2>Resumen</h2>
+          <div class="muted" id="summaryContext">
+            Vista general de tareas, costos y vencimientos
+          </div>
+        </div>
+
+        <div class="hero-actions" aria-label="Vista">
+          <div class="segmented" role="group" aria-label="Modo de vista">
+            <button id="viewDetailed" class="seg-btn is-active" type="button" aria-pressed="true">
+              Detallada
+            </button>
+            <button id="viewCompact" class="seg-btn" type="button" aria-pressed="false">
+              Compacta
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats stats-extended" aria-label="Resumen principal">
+        <div class="stat">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statTodo">0</div>
+          <div class="stat-lbl">Pendientes</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statDoing">0</div>
+          <div class="stat-lbl">En proceso</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statDone">0</div>
+          <div class="stat-lbl">Hechos</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statOverdue">0</div>
+          <div class="stat-lbl">Vencidas</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statRecurring">0</div>
+          <div class="stat-lbl">Recurrentes</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statCost">0</div>
+          <div class="stat-lbl">Costo total</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-num" id="statCompletion">0%</div>
+          <div class="stat-lbl">Completado</div>
+        </div>
+      </div>
+
+      <div class="quick-insights" aria-label="Insights rápidos">
+        <div class="insight-card">
+          <div class="insight-title">Estado general</div>
+          <div class="insight-value" id="insightHealth">Sin datos</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title">Lugar más cargado</div>
+          <div class="insight-value" id="insightPlace">Sin datos</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title">Categoría dominante</div>
+          <div class="insight-value" id="insightCategory">Sin datos</div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-title">Próximo foco</div>
+          <div class="insight-value" id="insightFocus">Sin datos</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTROS -->
     <section class="panel" aria-label="Filtros">
       <div class="panel-head">
-        <h2>Filtros</h2>
-        <!-- Plantillas eliminado -->
+        <div>
+          <h2>Filtros</h2>
+          <div class="muted">Refina la vista sin perder la cabeza</div>
+        </div>
+
+        <button id="btnClearFilters" class="btn ghost" type="button">
+          Limpiar filtros
+        </button>
       </div>
 
       <div class="filters">
         <div class="field">
           <label for="placeSelect">Lugar</label>
-          <select id="placeSelect" aria-label="Filtro por lugar"></select>
+          <select id="placeSelect" aria-label="Filtro por lugar">
+            <option value="all">Todos los lugares</option>
+          </select>
         </div>
 
         <div class="field">
@@ -112,39 +235,66 @@
 
         <div class="field">
           <label for="categoryFilter">Categoría</label>
-          <select id="categoryFilter" aria-label="Filtro por categoría"></select>
+          <select id="categoryFilter" aria-label="Filtro por categoría">
+            <option value="all">Todas</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="sortBy">Ordenar por</label>
+          <select id="sortBy" aria-label="Ordenar lista">
+            <option value="smart">Inteligente</option>
+            <option value="updated_desc">Más reciente</option>
+            <option value="updated_asc">Más antigua</option>
+            <option value="priority_desc">Prioridad alta</option>
+            <option value="priority_asc">Prioridad baja</option>
+            <option value="due_asc">Vencimiento cercano</option>
+            <option value="due_desc">Vencimiento lejano</option>
+            <option value="cost_desc">Costo más alto</option>
+            <option value="cost_asc">Costo más bajo</option>
+            <option value="title_asc">Título A-Z</option>
+          </select>
         </div>
 
         <div class="field span-2">
           <label for="q">Buscar</label>
-          <input id="q" type="search" placeholder="Ej: pared, bombillo, arena, shampoo..." autocomplete="off" />
+          <input
+            id="q"
+            type="search"
+            placeholder="Ej: pared, bombillo, arena, shampoo, baño, musicala..."
+            autocomplete="off"
+          />
         </div>
-      </div>
 
-      <div class="stats" aria-label="Resumen">
-        <div class="stat">
-          <div class="stat-num" id="statTotal">0</div>
-          <div class="stat-lbl">Total</div>
+        <div class="field">
+          <label class="check inline-check">
+            <input type="checkbox" id="onlyOverdue" />
+            <span>Solo vencidas</span>
+          </label>
         </div>
-        <div class="stat">
-          <div class="stat-num" id="statTodo">0</div>
-          <div class="stat-lbl">Pendientes</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="statDoing">0</div>
-          <div class="stat-lbl">En proceso</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" id="statDone">0</div>
-          <div class="stat-lbl">Hechos</div>
+
+        <div class="field">
+          <label class="check inline-check">
+            <input type="checkbox" id="onlyRecurring" />
+            <span>Solo recurrentes</span>
+          </label>
         </div>
       </div>
     </section>
 
+    <!-- LISTA -->
     <section class="panel" aria-label="Lista de tareas">
       <div class="panel-head">
-        <h2>Lista</h2>
-        <div class="muted" id="listHint">Todo queda guardado local. Offline real.</div>
+        <div>
+          <h2>Lista</h2>
+          <div class="muted" id="listHint">Todo queda guardado local. Offline real.</div>
+        </div>
+
+        <div class="list-toolbar" aria-label="Acciones de lista">
+          <div class="toolbar-chip" id="resultsCount">0 tareas</div>
+          <button id="btnExpandAll" class="btn ghost" type="button">Expandir</button>
+          <button id="btnCollapseAll" class="btn ghost" type="button">Compactar</button>
+        </div>
       </div>
 
       <div id="list" class="list" aria-live="polite"></div>
@@ -152,7 +302,9 @@
       <div id="empty" class="empty" hidden>
         <div class="empty-emoji" aria-hidden="true">🧼</div>
         <div class="empty-title">No hay nada aquí</div>
-        <div class="empty-sub">Agrega algo. O ignóralo y espera a que se dañe más, típico.</div>
+        <div class="empty-sub">
+          Agrega algo. O ignóralo y espera a que se dañe más, estrategia muy humana.
+        </div>
       </div>
     </section>
   </main>
@@ -163,9 +315,16 @@
       <div class="modal-head">
         <div>
           <div class="modal-title" id="modalTitle">Nueva tarea</div>
-          <div class="modal-sub">Arreglar / comprar / reponer por lugar.</div>
+          <div class="modal-sub">Arreglar, comprar, reponer o mejorar por lugar.</div>
         </div>
-        <button type="button" id="btnClose" class="btn icon ghost" aria-label="Cerrar">✕</button>
+        <button
+          type="button"
+          id="btnClose"
+          class="btn icon ghost"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
       </div>
 
       <div class="modal-body">
@@ -174,12 +333,22 @@
         <div class="grid">
           <div class="field span-2">
             <label for="title">Título</label>
-            <input id="title" required maxlength="80" placeholder="Ej: Comprar shampoo" />
+            <input
+              id="title"
+              required
+              maxlength="80"
+              placeholder="Ej: Comprar shampoo"
+            />
           </div>
 
           <div class="field span-2">
             <label for="notes">Notas</label>
-            <textarea id="notes" rows="3" maxlength="400" placeholder="Detalles, medidas, marca, referencia..."></textarea>
+            <textarea
+              id="notes"
+              rows="3"
+              maxlength="400"
+              placeholder="Detalles, medidas, marca, referencia, tamaño, color..."
+            ></textarea>
           </div>
 
           <div class="field">
@@ -227,7 +396,11 @@
 
           <div class="field span-2">
             <label for="cost">Costo estimado (COP)</label>
-            <input id="cost" inputmode="numeric" placeholder="Ej: 120000" />
+            <input
+              id="cost"
+              inputmode="numeric"
+              placeholder="Ej: 120000"
+            />
           </div>
 
           <div class="field span-2">
@@ -239,18 +412,37 @@
 
           <div class="field">
             <label for="everyDays">Cada (días)</label>
-            <input id="everyDays" type="number" min="1" max="365" value="30" />
+            <input
+              id="everyDays"
+              type="number"
+              min="1"
+              max="365"
+              value="30"
+            />
           </div>
 
           <div class="field">
             <label for="nextHint">Próxima sugerida</label>
             <input id="nextHint" type="text" disabled />
           </div>
+
+          <!-- preparado para mejoras futuras -->
+          <div class="field span-2">
+            <label for="taskChecklistPreview">Checklist</label>
+            <textarea
+              id="taskChecklistPreview"
+              rows="2"
+              placeholder="Próximamente: subtareas o pasos rápidos..."
+              disabled
+            ></textarea>
+          </div>
         </div>
       </div>
 
       <div class="modal-foot">
-        <button type="button" id="btnDelete" class="btn danger" hidden>Eliminar</button>
+        <button type="button" id="btnDelete" class="btn danger" hidden>
+          Eliminar
+        </button>
         <div class="spacer"></div>
         <button type="button" id="btnCancel" class="btn">Cancelar</button>
         <button type="submit" class="btn primary">Guardar</button>
@@ -258,8 +450,25 @@
     </form>
   </dialog>
 
+  <!-- MODAL PLACEHOLDER PARA STATS AVANZADAS -->
+  <dialog id="statsModalShell" class="modal" aria-label="Estadísticas avanzadas" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Estadísticas avanzadas</div>
+          <div class="modal-sub">Comparativos e insights generales</div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="statsMount"></div>
+      </div>
+    </div>
+  </dialog>
+
   <footer class="footer" role="contentinfo">
-    <div class="muted">LocalStorage • Offline • PWA • Hecho para Alek &amp; Cata 🫶</div>
+    <div class="muted">
+      LocalStorage • Offline • PWA • Hecho para Alek &amp; Cata 🫶
+    </div>
   </footer>
 
   <script src="./app.js" defer></script>
