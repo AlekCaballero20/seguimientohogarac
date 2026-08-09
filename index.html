@@ -148,6 +148,11 @@
         </div>
 
         <div class="stat">
+          <div class="stat-num" id="statStalled">0</div>
+          <div class="stat-lbl">Estancadas</div>
+        </div>
+
+        <div class="stat">
           <div class="stat-num" id="statCost">0</div>
           <div class="stat-lbl">Costo total</div>
         </div>
@@ -178,7 +183,24 @@
           <div class="insight-title">Próximo foco</div>
           <div class="insight-value" id="insightFocus">Sin datos</div>
         </div>
+
+        <div class="insight-card">
+          <div class="insight-title">Lo más estancado</div>
+          <div class="insight-value" id="insightStalled">Sin datos</div>
+        </div>
       </div>
+    </section>
+
+    <!-- FOCO: una cosa por lugar -->
+    <section class="panel focus-panel" id="focusPanel" aria-label="Foco sugerido" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Foco</h2>
+          <div class="muted" id="focusSub">Lo siguiente por lugar</div>
+        </div>
+      </div>
+
+      <div class="focus-list" id="focusList"></div>
     </section>
 
     <!-- FILTROS -->
@@ -244,6 +266,7 @@
           <label for="sortBy">Ordenar por</label>
           <select id="sortBy" aria-label="Ordenar lista">
             <option value="smart">Inteligente</option>
+            <option value="stalled_desc">Más estancadas</option>
             <option value="updated_desc">Más reciente</option>
             <option value="updated_asc">Más antigua</option>
             <option value="priority_desc">Prioridad alta</option>
@@ -277,6 +300,13 @@
           <label class="check inline-check">
             <input type="checkbox" id="onlyRecurring" />
             <span>Solo recurrentes</span>
+          </label>
+        </div>
+
+        <div class="field">
+          <label class="check inline-check">
+            <input type="checkbox" id="onlyStalled" />
+            <span>Solo estancadas</span>
           </label>
         </div>
       </div>

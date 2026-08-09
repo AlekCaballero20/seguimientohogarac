@@ -9,6 +9,13 @@
 const LS_KEY = "hogares_pwa_v1";
 const UI_KEY = "hogares_pwa_ui_v1";
 
+/* Antigüedad: el punto de la app es que las cosas no se queden ahí.
+   A partir de STALE_DAYS sin cerrarse, una tarea empieza a pesar más. */
+const STALE_DAYS = 30;
+const STALE_MONTHS_LEVEL = 90;   // ~3 meses
+const STALE_FOREVER_LEVEL = 180; // ~6 meses
+const FOCUS_MAX = 4;
+
 const DEFAULT_PLACES = [
   { id: "musicala", name: "Musicala" },
   { id: "nuestro", name: "Nuestro espacio (Alek y Cata)" },
@@ -171,6 +178,73 @@ function isDueSoon(task, days = 7) {
   return task.dueDate >= today && task.dueDate <= future;
 }
 
+/* =========================
+   Antigüedad / estancamiento
+========================= */
+function daysSince(iso) {
+  if (!iso) return 0;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 0;
+  const ms = Date.now() - d.getTime();
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+
+function taskAgeDays(t) {
+  return daysSince(t?.createdAt);
+}
+
+function isStalled(t) {
+  if (!t || t.status === "done") return false;
+  return taskAgeDays(t) >= STALE_DAYS;
+}
+
+function stallLevel(t) {
+  if (!isStalled(t)) return 0;
+  const age = taskAgeDays(t);
+  if (age >= STALE_FOREVER_LEVEL) return 3;
+  if (age >= STALE_MONTHS_LEVEL) return 2;
+  return 1;
+}
+
+function humanAge(days) {
+  const d = Math.max(0, Math.floor(Number(days) || 0));
+  if (d < 1) return "hoy";
+  if (d === 1) return "1 día";
+  if (d < 30) return `${d} días`;
+
+  const months = Math.floor(d / 30);
+  if (months < 12) return months === 1 ? "1 mes" : `${months} meses`;
+
+  const years = Math.floor(d / 365);
+  return years === 1 ? "1 año" : `${years} años`;
+}
+
+/* Presión: cuánto empuja hacia arriba el hecho de llevar tiempo ahí.
+   Lo roto pesa más, porque seguir roto es peor que seguir sin mejorar. */
+function stallPressure(t) {
+  if (!t || t.status === "done") return 0;
+  const age = Math.min(taskAgeDays(t), 365);
+  const weight = t.type === "reparar" ? 1.5 : 1;
+  return age * weight;
+}
+
+/* Un solo número que mezcla vencimiento, prioridad y antigüedad.
+   Vencido siempre gana; después compiten prioridad y tiempo estancado. */
+function urgencyScore(t) {
+  if (!t) return 0;
+  let score = 0;
+
+  if (isOverdue(t)) score += 1000 + daysSince(t.dueDate);
+  else if (isDueSoon(t, 7)) score += 400;
+
+  score += clampInt(t.priority, 1, 3, 2) * 100;
+  score += stallPressure(t);
+
+  if (t.status === "doing") score += 50;
+
+  return score;
+}
+
 function typeLabel(t) {
   return ({ reparar: "Arreglar", comprar: "Comprar", reponer: "Reponer", mejorar: "Mejorar" }[t] || t || "Tipo");
 }
@@ -303,6 +377,7 @@ const categoryFilter = $("#categoryFilter");
 const sortBy = $("#sortBy");
 const onlyOverdue = $("#onlyOverdue");
 const onlyRecurring = $("#onlyRecurring");
+const onlyStalled = $("#onlyStalled");
 const q = $("#q");
 const btnClearFilters = $("#btnClearFilters");
 
@@ -319,12 +394,18 @@ const statOverdue = $("#statOverdue");
 const statRecurring = $("#statRecurring");
 const statCost = $("#statCost");
 const statCompletion = $("#statCompletion");
+const statStalled = $("#statStalled");
 
 const summaryContext = $("#summaryContext");
 const insightHealth = $("#insightHealth");
 const insightPlace = $("#insightPlace");
 const insightCategory = $("#insightCategory");
 const insightFocus = $("#insightFocus");
+const insightStalled = $("#insightStalled");
+
+const focusPanel = $("#focusPanel");
+const focusList = $("#focusList");
+const focusSub = $("#focusSub");
 
 const btnNew = $("#btnNew");
 const btnExport = $("#btnExport");
@@ -444,6 +525,7 @@ function resetFilters() {
   if (q) q.value = "";
   if (onlyOverdue) onlyOverdue.checked = false;
   if (onlyRecurring) onlyRecurring.checked = false;
+  if (onlyStalled) onlyStalled.checked = false;
 }
 
 /* =========================
@@ -587,8 +669,10 @@ function taskMatchesFilters(t) {
   const query = (q?.value || "").trim().toLowerCase();
   const overdueOnly = !!onlyOverdue?.checked;
   const recurringOnly = !!onlyRecurring?.checked;
+  const stalledOnly = !!onlyStalled?.checked;
 
   if (place !== "all" && t.placeId !== place) return false;
+  if (stalledOnly && !isStalled(t)) return false;
   if (st !== "all" && t.status !== st) return false;
   if (ty !== "all" && t.type !== ty) return false;
   if (pr !== "all" && String(t.priority) !== String(pr)) return false;
@@ -635,15 +719,30 @@ function sortTasks(a, b) {
       return costA - costB || updatedB - updatedA;
     case "title_asc":
       return compareText(a.title, b.title) || updatedB - updatedA;
+    case "stalled_desc": {
+      // Lo hecho no está estancado, así que no compite por antigüedad.
+      const closedA = a.status === "done" ? 1 : 0;
+      const closedB = b.status === "done" ? 1 : 0;
+      if (closedA !== closedB) return closedA - closedB;
+      return taskAgeDays(b) - taskAgeDays(a) || urgencyScore(b) - urgencyScore(a);
+    }
     case "smart":
     default: {
-      const order = { todo: 0, doing: 1, done: 2 };
-      const oa = order[a.status] ?? 9;
-      const ob = order[b.status] ?? 9;
-      if (oa !== ob) return oa - ob;
+      // Pendiente y en proceso compiten juntos; solo "hecho" se va al final.
+      const closedA = a.status === "done" ? 1 : 0;
+      const closedB = b.status === "done" ? 1 : 0;
+      if (closedA !== closedB) return closedA - closedB;
 
-      if (isOverdue(a) !== isOverdue(b)) return isOverdue(a) ? -1 : 1;
-      if (priA !== priB) return priB - priA;
+      if (closedA === 1) return updatedB - updatedA;
+
+      const scoreA = urgencyScore(a);
+      const scoreB = urgencyScore(b);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+
+      const ageA = taskAgeDays(a);
+      const ageB = taskAgeDays(b);
+      if (ageA !== ageB) return ageB - ageA;
+
       if (dueA !== dueB) return compareText(dueA, dueB);
       return updatedB - updatedA;
     }
@@ -682,6 +781,12 @@ function computeStatsFromTasks(tasks) {
   const recurring = tasks.filter((t) => t.recurring?.enabled).length;
   const totalCost = tasks.reduce((acc, t) => acc + parseCost(t.cost), 0);
 
+  const stalledTasks = tasks.filter(isStalled);
+  const stalled = stalledTasks.length;
+  const oldest = stalledTasks
+    .slice()
+    .sort((a, b) => taskAgeDays(b) - taskAgeDays(a))[0] || null;
+
   const completion = tasks.length ? (done / tasks.length) * 100 : 0;
 
   const topCats = topEntries(countMap(tasks.map((t) => t.category || "General")), 6);
@@ -695,6 +800,8 @@ function computeStatsFromTasks(tasks) {
     done,
     overdue,
     recurring,
+    stalled,
+    oldest,
     totalCost,
     completion,
     topCats,
@@ -712,28 +819,39 @@ function computeStats(placeId = "all") {
 
 function computeGlobalInsights(tasks) {
   const stats = computeStatsFromTasks(tasks);
-  const nearestDue = tasks
-    .filter((t) => t.status !== "done" && t.dueDate)
-    .sort((a, b) => compareText(a.dueDate, b.dueDate))[0] || null;
+
+  // El foco ya no depende de tener fecha: lo elige el puntaje completo.
+  const nextFocus = tasks
+    .filter((t) => t.status !== "done")
+    .sort((a, b) => urgencyScore(b) - urgencyScore(a))[0] || null;
 
   let health = "Sin datos";
   if (stats.tasksCount === 0) {
     health = "Todo tranquilo";
   } else if (stats.overdue > 0) {
     health = `${stats.overdue} vencida${stats.overdue === 1 ? "" : "s"}`;
+  } else if (stats.stalled > 0) {
+    health = `${stats.stalled} estancada${stats.stalled === 1 ? "" : "s"}`;
   } else if (stats.todo > 0 || stats.doing > 0) {
     health = `${stats.todo + stats.doing} activa${(stats.todo + stats.doing) === 1 ? "" : "s"}`;
   } else {
     health = "Todo al día";
   }
 
+  const focusLabel = nextFocus
+    ? (nextFocus.dueDate
+        ? `${nextFocus.title} · ${nextFocus.dueDate}`
+        : `${nextFocus.title} · lleva ${humanAge(taskAgeDays(nextFocus))}`)
+    : "Nada pendiente";
+
   return {
     health,
     place: stats.topPlaces[0]?.[0] || "Sin datos",
     category: stats.topCats[0]?.[0] || "Sin datos",
-    focus: nearestDue
-      ? `${nearestDue.title} · ${nearestDue.dueDate}`
-      : (stats.todo + stats.doing > 0 ? "Revisar pendientes" : "Nada urgente")
+    focus: focusLabel,
+    stalled: stats.oldest
+      ? `${stats.oldest.title} · ${humanAge(taskAgeDays(stats.oldest))}`
+      : "Nada estancado 🎉"
   };
 }
 
@@ -748,6 +866,7 @@ function renderStats() {
   if (statDone) statDone.textContent = String(stats.done);
   if (statOverdue) statOverdue.textContent = String(stats.overdue);
   if (statRecurring) statRecurring.textContent = String(stats.recurring);
+  if (statStalled) statStalled.textContent = String(stats.stalled);
   if (statCost) statCost.textContent = formatCOP(stats.totalCost);
   if (statCompletion) statCompletion.textContent = formatPercent(stats.completion);
 
@@ -764,6 +883,89 @@ function renderStats() {
   if (insightPlace) insightPlace.textContent = insights.place;
   if (insightCategory) insightCategory.textContent = insights.category;
   if (insightFocus) insightFocus.textContent = insights.focus;
+  if (insightStalled) insightStalled.textContent = insights.stalled;
+}
+
+/* =========================
+   Foco: una cosa por lugar
+   La lista completa paraliza. Esto propone lo siguiente concreto.
+========================= */
+function computeFocusItems() {
+  const scope = getScopePlaceId();
+  const pending = getScopeTasks().filter((t) => t.status !== "done");
+  if (pending.length === 0) return [];
+
+  const ranked = pending.slice().sort((a, b) => urgencyScore(b) - urgencyScore(a));
+
+  // Con un lugar seleccionado el foco es dentro de ese lugar;
+  // en la vista global es una cosa por lugar, para no mirar solo al más caótico.
+  if (scope !== "all") return ranked.slice(0, FOCUS_MAX);
+
+  const byPlace = new Map();
+  for (const t of ranked) {
+    if (!byPlace.has(t.placeId)) byPlace.set(t.placeId, t);
+  }
+
+  return Array.from(byPlace.values()).slice(0, FOCUS_MAX);
+}
+
+function renderFocus() {
+  if (!focusPanel || !focusList) return;
+
+  const items = computeFocusItems();
+  focusPanel.hidden = items.length === 0;
+
+  if (focusSub) {
+    const scope = getScopePlaceId();
+    if (items.length === 0) {
+      focusSub.textContent = "Nada pendiente por ahora.";
+    } else if (scope === "all") {
+      focusSub.textContent = `Lo siguiente en ${items.length} ${items.length === 1 ? "lugar" : "lugares"}. Una cosa a la vez.`;
+    } else {
+      focusSub.textContent = `Lo siguiente en ${getPlaceName(scope)}. Una cosa a la vez.`;
+    }
+  }
+
+  focusList.innerHTML = "";
+  if (items.length === 0) return;
+
+  const frag = document.createDocumentFragment();
+
+  for (const t of items) {
+    const row = document.createElement("div");
+    row.className = "focus-item";
+    if (stallLevel(t) >= 2) row.classList.add("is-stalled");
+
+    const info = document.createElement("button");
+    info.type = "button";
+    info.className = "focus-open";
+    info.title = "Editar esta tarea";
+    info.innerHTML = `
+      <span class="focus-place">${escapeHTML(getPlaceName(t.placeId))}</span>
+      <span class="focus-title">${escapeHTML(t.title || "(Sin título)")}</span>
+      <span class="focus-meta">${escapeHTML(
+        [
+          typeLabel(t.type),
+          isOverdue(t) ? `vencida ${t.dueDate}` : (t.dueDate ? `vence ${t.dueDate}` : "sin fecha"),
+          `lleva ${humanAge(taskAgeDays(t))}`
+        ].join(" • ")
+      )}</span>
+    `;
+    info.addEventListener("click", () => openModal(getTask(t.id)));
+
+    const act = document.createElement("button");
+    act.type = "button";
+    act.className = "pill ok focus-do";
+    act.textContent = t.status === "doing" ? "✅" : "▶";
+    act.title = t.status === "doing" ? "Marcar como hecho" : "Empezar esto";
+    act.addEventListener("click", () => setStatus(t.id, nextStatus(t.status)));
+
+    row.appendChild(info);
+    row.appendChild(act);
+    frag.appendChild(row);
+  }
+
+  focusList.appendChild(frag);
 }
 
 /* =========================
@@ -805,6 +1007,7 @@ function renderListMeta(items, totalInScope) {
 
     if (onlyOverdue?.checked) parts.push("solo vencidas");
     if (onlyRecurring?.checked) parts.push("solo recurrentes");
+    if (onlyStalled?.checked) parts.push(`solo estancadas (+${STALE_DAYS}d)`);
     if ((q?.value || "").trim()) parts.push(`búsqueda: "${q.value.trim()}"`);
 
     listHint.textContent = parts.join(" • ");
@@ -846,6 +1049,13 @@ function renderTaskCard(t) {
   }
   if (isDueSoon(t, 7) && !isOverdue(t)) {
     badgesBox.appendChild(badge("Pronto", "muted"));
+  }
+
+  const level = stallLevel(t);
+  if (level > 0) {
+    const age = humanAge(taskAgeDays(t));
+    const text = level === 3 ? `⏳ Lleva ${age} aquí` : `⏳ Lleva ${age}`;
+    badgesBox.appendChild(badge(text, `stale stale-${level}`));
   }
 
   head.appendChild(badgesBox);
@@ -916,6 +1126,7 @@ function render() {
   ensureDefaultFilterValues();
   renderViewMode();
   renderStats();
+  renderFocus();
 
   if (!list || !empty) return;
 
@@ -1058,7 +1269,9 @@ function exportCSV() {
       "recurrente",
       "cada_dias",
       "creado",
-      "actualizado"
+      "actualizado",
+      "dias_de_antiguedad",
+      "estancada"
     ]
   ];
 
@@ -1083,7 +1296,9 @@ function exportCSV() {
       t.recurring?.enabled ? "sí" : "no",
       t.recurring?.enabled ? t.recurring.everyDays : "",
       t.createdAt || "",
-      t.updatedAt || ""
+      t.updatedAt || "",
+      taskAgeDays(t),
+      isStalled(t) ? "sí" : "no"
     ]);
   });
 
@@ -1237,6 +1452,7 @@ function statsCardsHTML(s) {
       <div class="stat"><div class="stat-num">${s.done}</div><div class="stat-lbl">Hechos</div></div>
       <div class="stat"><div class="stat-num">${s.overdue}</div><div class="stat-lbl">Vencidas</div></div>
       <div class="stat"><div class="stat-num">${s.recurring}</div><div class="stat-lbl">Recurrentes</div></div>
+      <div class="stat"><div class="stat-num">${s.stalled}</div><div class="stat-lbl">Estancadas</div></div>
       <div class="stat"><div class="stat-num">${escapeHTML(formatCOP(s.totalCost))}</div><div class="stat-lbl">Costo total</div></div>
       <div class="stat"><div class="stat-num">${formatPercent(s.completion)}</div><div class="stat-lbl">Completado</div></div>
     </div>
@@ -1270,8 +1486,32 @@ function openStats() {
     20
   );
 
+  const scopeTasksForStats = scopeId === "all"
+    ? state.tasks.slice()
+    : state.tasks.filter((t) => t.placeId === scopeId);
+
+  const oldestList = scopeTasksForStats
+    .filter(isStalled)
+    .sort((a, b) => taskAgeDays(b) - taskAgeDays(a))
+    .slice(0, 8);
+
+  const oldestHTML = oldestList.length
+    ? oldestList.map((t) => `
+        <span class="badge stale stale-${stallLevel(t)}">
+          ${escapeHTML(t.title || "(Sin título)")} · ${escapeHTML(humanAge(taskAgeDays(t)))}
+        </span>
+      `).join("")
+    : `<span class="badge muted">Nada estancado 🎉</span>`;
+
   body.innerHTML = `
     ${statsCardsHTML(scopeStats)}
+
+    <div class="card" style="margin:0 0 12px; grid-template-columns:1fr;">
+      <div class="meta" style="margin-top:0;">Lo que lleva más tiempo esperando</div>
+      <div class="badges" style="margin-top:8px;">
+        ${oldestHTML}
+      </div>
+    </div>
 
     <div class="card" style="margin:0 0 12px; grid-template-columns:1fr;">
       <div class="meta" style="margin-top:0;">Resumen actual</div>
@@ -1296,6 +1536,7 @@ function openStats() {
         <div class="badges" style="margin-top:8px;">
           <span class="badge muted">Global total: ${globalStats.tasksCount}</span>
           <span class="badge muted">Global vencidas: ${globalStats.overdue}</span>
+          <span class="badge muted">Global estancadas: ${globalStats.stalled}</span>
           <span class="badge muted">Global costo: ${escapeHTML(formatCOP(globalStats.totalCost))}</span>
           <span class="badge muted">Participación: ${globalStats.tasksCount ? formatPercent((scopeStats.tasksCount / globalStats.tasksCount) * 100) : "0%"}</span>
         </div>
@@ -1636,7 +1877,8 @@ safeOn(btnCollapseAll, "click", () => setViewMode("compact"));
   categoryFilter,
   sortBy,
   onlyOverdue,
-  onlyRecurring
+  onlyRecurring,
+  onlyStalled
 ].forEach((el) => {
   safeOn(el, "change", render);
 });

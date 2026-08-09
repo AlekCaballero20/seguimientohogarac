@@ -471,7 +471,7 @@ select{
 .quick-insights{
   padding:0 16px 16px;
   display:grid;
-  grid-template-columns:repeat(4, 1fr);
+  grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
   gap:10px;
 }
 
@@ -497,6 +497,75 @@ select{
   line-height:1.35;
   font-weight:900;
   color:var(--text-soft);
+}
+
+/* ===== Foco ===== */
+.focus-panel .panel-head{
+  padding-bottom:6px;
+}
+
+.focus-list{
+  padding:0 16px 16px;
+  display:grid;
+  gap:10px;
+}
+
+.focus-item{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:10px;
+  padding:12px 13px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(255,255,255,.62);
+  box-shadow:inset 0 -1px 0 rgba(15,23,42,.04);
+}
+
+.focus-item.is-stalled{
+  border-color:rgba(249,115,22,.34);
+  background:linear-gradient(90deg, rgba(249,115,22,.09), rgba(255,255,255,.62) 62%);
+}
+
+.focus-open{
+  display:grid;
+  gap:3px;
+  text-align:left;
+  border:0;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
+  font:inherit;
+  color:inherit;
+  min-height:var(--tap);
+  border-radius:12px;
+}
+
+.focus-open:focus-visible{
+  outline:none;
+  box-shadow:var(--focus);
+}
+
+.focus-place{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  font-weight:900;
+  color:var(--muted-2);
+}
+
+.focus-title{
+  font-size:14px;
+  font-weight:900;
+  line-height:1.3;
+  color:var(--text);
+  word-break:break-word;
+}
+
+.focus-meta{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.35;
 }
 
 /* ===== Menu ===== */
@@ -655,6 +724,31 @@ select{
   border-color:rgba(139,92,246,.28);
   background:rgba(139,92,246,.10);
   color:#5b21b6;
+}
+
+/* Antigüedad: entre más tiempo lleve ahí, más se nota. */
+.badge.stale{
+  font-variant-numeric:tabular-nums;
+}
+
+.badge.stale-1{
+  border-color:rgba(245,158,11,.30);
+  background:rgba(245,158,11,.10);
+  color:#78350f;
+}
+
+.badge.stale-2{
+  border-color:rgba(249,115,22,.42);
+  background:rgba(249,115,22,.16);
+  color:#7c2d12;
+  font-weight:800;
+}
+
+.badge.stale-3{
+  border-color:rgba(190,24,93,.44);
+  background:rgba(190,24,93,.16);
+  color:#831843;
+  font-weight:900;
 }
 
 .card-notes{
@@ -997,8 +1091,12 @@ dialog[hidden]{
     grid-column:auto;
   }
 
+  /* En celular 1 sola columna era demasiado scroll con 9 tiles */
   .stats,
-  .stats-extended,
+  .stats-extended{
+    grid-template-columns:repeat(2, 1fr);
+  }
+
   .quick-insights{
     grid-template-columns:1fr;
   }
