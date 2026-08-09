@@ -10,7 +10,7 @@
 
 "use strict";
 
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 const CACHE_PREFIX = "hogares-pwa";
 
 const CACHE_APP = `${CACHE_PREFIX}-app-${VERSION}`;
@@ -19,14 +19,17 @@ const CACHE_RUNTIME = `${CACHE_PREFIX}-runtime-${VERSION}`;
 
 const OFFLINE_FALLBACK_URL = "./index.html";
 
+/* Solo los iconos chicos. Los de 512 los pide el sistema al instalar (con
+   conexión) y de todos modos quedan en el cache de runtime. */
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
+  "./icons/favicon-32.png",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-maskable-192.png"
 ];
 
 /* =========================
