@@ -6,7 +6,6 @@
 
   --panel: rgba(255,255,255,.76);
   --panel2: rgba(255,255,255,.60);
-  --panel-strong: rgba(255,255,255,.88);
 
   --text:#0f172a;
   --text-soft:#1e293b;
@@ -17,21 +16,12 @@
   --line2: rgba(15,23,42,.14);
   --line3: rgba(15,23,42,.06);
 
-  --accent:#22c55e;
   --accent2:#60a5fa;
-  --accent3:#8b5cf6;
-  --danger:#ef4444;
-  --warn:#f59e0b;
-  --ok:#16a34a;
 
   --shadow: 0 18px 50px rgba(15,23,42,.10);
   --shadow2: 0 10px 25px rgba(15,23,42,.08);
-  --shadow3: 0 6px 18px rgba(15,23,42,.06);
 
-  --radius:18px;
   --radius2:22px;
-  --radius3:16px;
-  --radius4:14px;
 
   --focus: 0 0 0 4px rgba(96,165,250,.26);
 
@@ -85,7 +75,7 @@ h2{
   letter-spacing:.2px;
 }
 
-.hidden{
+[hidden]{
   display:none !important;
 }
 
@@ -421,82 +411,180 @@ select{
 }
 
 /* ===== Stats ===== */
-.stats{
-  padding:0 16px 14px;
+.hero-metrics{
+  padding:14px 16px 12px;
   display:grid;
-  grid-template-columns:repeat(4, 1fr);
   gap:10px;
 }
 
-.stats-extended{
-  grid-template-columns:repeat(4, 1fr);
+/* Dos cifras protagonistas: lo vencido y lo estancado. */
+.stats-lead{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:10px;
+}
+
+.lead{
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line2);
+  border-radius:18px;
+  padding:14px 16px;
+  background:rgba(255,255,255,.66);
+  box-shadow:0 8px 20px rgba(15,23,42,.05);
+}
+
+.lead-num{
+  font-size:34px;
+  font-weight:950;
+  line-height:1;
+  letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+
+.lead-lbl{
+  margin-top:5px;
+  font-size:13px;
+  font-weight:900;
+  color:var(--text-soft);
+}
+
+.lead-hint{
+  margin-top:2px;
+  font-size:11px;
+  color:var(--muted-2);
+  line-height:1.3;
+}
+
+.lead.is-alert{
+  border-color:rgba(239,68,68,.30);
+  background:linear-gradient(180deg, rgba(239,68,68,.10), rgba(255,255,255,.62));
+}
+
+.lead.is-alert .lead-num{ color:#b91c1c; }
+
+.lead.is-warn{
+  border-color:rgba(249,115,22,.32);
+  background:linear-gradient(180deg, rgba(249,115,22,.11), rgba(255,255,255,.62));
+}
+
+.lead.is-warn .lead-num{ color:#c2410c; }
+
+/* Cuando no hay nada que atender, la alarma se apaga sola. */
+.lead.is-calm{
+  border-color:var(--line);
+  background:rgba(255,255,255,.52);
+}
+
+.lead.is-calm .lead-num{ color:var(--muted-2); }
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:8px;
+}
+
+/* En pantalla ancha las cifras grandes van al lado de los tiles,
+   así no quedan estiradas con medio panel vacío. */
+@media (min-width: 901px){
+  .hero-metrics{
+    grid-template-columns:minmax(0, .85fr) minmax(0, 1.15fr);
+    align-items:start;
+  }
 }
 
 .stat{
-  position:relative;
-  overflow:hidden;
   border:1px solid var(--line);
-  border-radius:16px;
-  background:rgba(255,255,255,.62);
-  padding:12px 13px;
-  box-shadow:
-    inset 0 -1px 0 rgba(15,23,42,.04),
-    0 6px 16px rgba(15,23,42,.04);
-}
-
-.stat::after{
-  content:"";
-  position:absolute;
-  inset:auto 0 0 0;
-  height:3px;
-  background:linear-gradient(90deg, rgba(96,165,250,.58), rgba(34,197,94,.44));
-  opacity:.55;
+  border-radius:14px;
+  background:rgba(255,255,255,.56);
+  padding:10px 11px;
 }
 
 .stat-num{
-  font-size:19px;
+  font-size:17px;
   font-weight:950;
   line-height:1.1;
   color:var(--text);
+  font-variant-numeric:tabular-nums;
   word-break:break-word;
 }
 
 .stat-lbl{
-  margin-top:4px;
-  font-size:12px;
+  margin-top:3px;
+  font-size:11px;
   color:var(--muted);
   line-height:1.25;
 }
 
-.quick-insights{
+.stat.is-good .stat-num{ color:#15803d; }
+
+/* ===== Progreso ===== */
+.progress-row{
+  padding:0 16px 14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.progress-track{
+  flex:1;
+  height:8px;
+  border-radius:999px;
+  background:rgba(15,23,42,.07);
+  overflow:hidden;
+}
+
+.progress-fill{
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg, rgba(34,197,94,.85), rgba(96,165,250,.85));
+  transition:width .3s ease;
+}
+
+.progress-lbl{
+  font-size:12px;
+  font-weight:900;
+  color:var(--muted);
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ===== Insights ===== */
+/* Antes eran 5 tarjetas; como texto se leen más rápido y ocupan un tercio. */
+.insight-strip{
+  margin:0;
   padding:0 16px 16px;
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
-  gap:10px;
+  grid-template-columns:repeat(auto-fit, minmax(215px, 1fr));
+  gap:2px 18px;
 }
 
-.insight-card{
-  border:1px solid var(--line);
-  border-radius:16px;
-  background:rgba(255,255,255,.56);
-  padding:12px 13px;
-  box-shadow:inset 0 -1px 0 rgba(15,23,42,.03);
+.insight{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  padding:6px 0;
+  border-top:1px solid var(--line3);
+  min-width:0;
 }
 
-.insight-title{
+.insight dt{
   font-size:11px;
   text-transform:uppercase;
-  letter-spacing:.05em;
+  letter-spacing:.04em;
   color:var(--muted-2);
   font-weight:900;
+  flex:0 0 auto;
 }
 
-.insight-value{
-  margin-top:6px;
-  font-size:14px;
-  line-height:1.35;
+.insight dd{
+  margin:0;
+  font-size:13px;
   font-weight:900;
   color:var(--text-soft);
+  line-height:1.3;
+  min-width:0;
+  overflow-wrap:anywhere;
 }
 
 /* ===== Foco ===== */
@@ -815,35 +903,6 @@ select{
   background:rgba(239,68,68,.10);
 }
 
-/* ===== Optional view hooks ===== */
-body.view-compact .card{
-  padding:11px 12px;
-  gap:10px;
-}
-
-body.view-compact .card-notes{
-  display:none;
-}
-
-body.view-compact .meta{
-  margin-top:6px;
-  font-size:10px;
-}
-
-body.view-compact .actions{
-  gap:6px;
-}
-
-body.view-compact .pill{
-  min-height:36px;
-  padding:7px 9px;
-}
-
-body.view-compact .badge{
-  font-size:10px;
-  padding:4px 7px;
-}
-
 /* ===== Empty ===== */
 .empty{
   padding:34px 18px 38px;
@@ -947,11 +1006,6 @@ body.view-compact .badge{
   gap:10px;
 }
 
-/* ===== Dialog shell hidden fallback ===== */
-dialog[hidden]{
-  display:none !important;
-}
-
 /* ===== Utility states ===== */
 .is-overdue{
   border-color:rgba(239,68,68,.22) !important;
@@ -993,27 +1047,7 @@ dialog[hidden]{
   background-clip:padding-box;
 }
 
-/* ===== FAB optional ===== */
-.btn.fab{
-  position:fixed;
-  right:16px;
-  bottom:16px;
-  z-index:20;
-  border-radius:999px;
-  padding:12px 14px;
-  box-shadow:0 18px 44px rgba(15,23,42,.16);
-}
-
 /* ===== Responsive ===== */
-@media (max-width: 1100px){
-  .stats-extended{
-    grid-template-columns:repeat(4, 1fr);
-  }
-
-  .quick-insights{
-    grid-template-columns:repeat(2, 1fr);
-  }
-}
 
 @media (max-width: 900px){
   .topbar{
@@ -1036,17 +1070,8 @@ dialog[hidden]{
     grid-column:span 2;
   }
 
-  .stats,
-  .stats-extended{
-    grid-template-columns:repeat(2, 1fr);
-  }
-
   .grid{
     grid-template-columns:1fr;
-  }
-
-  .quick-insights{
-    grid-template-columns:1fr 1fr;
   }
 
   .card{
@@ -1091,14 +1116,12 @@ dialog[hidden]{
     grid-column:auto;
   }
 
-  /* En celular 1 sola columna era demasiado scroll con 9 tiles */
-  .stats,
-  .stats-extended{
-    grid-template-columns:repeat(2, 1fr);
+  .insight-strip{
+    grid-template-columns:1fr;
   }
 
-  .quick-insights{
-    grid-template-columns:1fr;
+  .lead-num{
+    font-size:30px;
   }
 
   .menu-panel{
@@ -1156,7 +1179,8 @@ dialog[hidden]{
   .card,
   .modal-card,
   .stat,
-  .insight-card{
+  .lead,
+  .focus-item{
     border-color:var(--line2);
   }
 }
@@ -1164,16 +1188,12 @@ dialog[hidden]{
 /* =========================
    Vista Compacta
 ========================= */
-
 .view-compact .card{
   padding:10px 12px;
   gap:6px;
 }
 
-.view-compact .card-notes{
-  display:none;
-}
-
+.view-compact .card-notes,
 .view-compact .meta{
   display:none;
 }
@@ -1191,7 +1211,12 @@ dialog[hidden]{
   font-size:13px;
 }
 
+.view-compact .actions{
+  gap:6px;
+}
+
 .view-compact .actions .pill{
+  min-height:36px;
   padding:4px 6px;
   font-size:11px;
 }

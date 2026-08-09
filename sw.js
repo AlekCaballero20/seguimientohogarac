@@ -10,7 +10,7 @@
 
 "use strict";
 
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const CACHE_PREFIX = "hogares-pwa";
 
 const CACHE_APP = `${CACHE_PREFIX}-app-${VERSION}`;
@@ -239,21 +239,11 @@ function isCacheableResponse(res) {
 }
 
 async function offlineAssetFallback(req) {
-  const url = new URL(req.url);
+  // Solo el HTML tiene fallback: para assets no hay nada que ofrecer.
+  if (!isHTML(req) && req.mode !== "navigate") return null;
 
-  // Si piden HTML, devolver index
-  if (isHTML(req) || req.mode === "navigate") {
-    const appCache = await caches.open(CACHE_APP);
-    const fallback = await appCache.match(OFFLINE_FALLBACK_URL);
-    if (fallback) return fallback;
-  }
-
-  // Si piden imagen, podrías devolver una imagen fallback en el futuro
-  if (/\.(png|jpg|jpeg|svg|webp|gif|ico)$/i.test(url.pathname)) {
-    return null;
-  }
-
-  return null;
+  const appCache = await caches.open(CACHE_APP);
+  return (await appCache.match(OFFLINE_FALLBACK_URL)) || null;
 }
 
 function offlineResponse(message = "Offline") {

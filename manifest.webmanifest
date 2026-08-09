@@ -77,55 +77,12 @@
           "sizes": "192x192"
         }
       ]
-    },
-    {
-      "name": "Ver tareas",
-      "short_name": "Tareas",
-      "description": "Abrir lista de tareas",
-      "url": "./",
-      "icons": [
-        {
-          "src": "./icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ],
-
-  "screenshots": [
-    {
-      "src": "./screenshots/screen1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "label": "Vista de tareas"
-    },
-    {
-      "src": "./screenshots/screen2.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "label": "Panel de estadísticas"
     }
   ],
 
   "launch_handler": {
     "client_mode": "focus-existing"
   },
-
-  "protocol_handlers": [
-    {
-      "protocol": "web+hogares",
-      "url": "./?action=%s"
-    }
-  ],
-
-  "file_handlers": [
-    {
-      "action": "./?import=true",
-      "accept": {
-        "application/json": [".json"]
-      }
-    }
-  ],
 
   "edge_side_panel": {
     "preferred_width": 420

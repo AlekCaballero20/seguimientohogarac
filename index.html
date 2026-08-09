@@ -116,12 +116,22 @@
         </div>
       </div>
 
-      <div class="stats stats-extended" aria-label="Resumen principal">
-        <div class="stat">
-          <div class="stat-num" id="statTotal">0</div>
-          <div class="stat-lbl">Total</div>
+      <div class="hero-metrics">
+      <!-- Las dos que importan van grandes; el resto es contexto -->
+      <div class="stats-lead" aria-label="Lo que necesita atención">
+        <div class="lead is-alert">
+          <div class="lead-num" id="statOverdue">0</div>
+          <div class="lead-lbl">Vencidas</div>
         </div>
 
+        <div class="lead is-warn">
+          <div class="lead-num" id="statStalled">0</div>
+          <div class="lead-lbl">Estancadas</div>
+          <div class="lead-hint">más de 30 días esperando</div>
+        </div>
+      </div>
+
+      <div class="stats" aria-label="Resumen general">
         <div class="stat">
           <div class="stat-num" id="statTodo">0</div>
           <div class="stat-lbl">Pendientes</div>
@@ -132,14 +142,9 @@
           <div class="stat-lbl">En proceso</div>
         </div>
 
-        <div class="stat">
+        <div class="stat is-good">
           <div class="stat-num" id="statDone">0</div>
           <div class="stat-lbl">Hechos</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-num" id="statOverdue">0</div>
-          <div class="stat-lbl">Vencidas</div>
         </div>
 
         <div class="stat">
@@ -148,47 +153,50 @@
         </div>
 
         <div class="stat">
-          <div class="stat-num" id="statStalled">0</div>
-          <div class="stat-lbl">Estancadas</div>
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-lbl">Total</div>
         </div>
 
         <div class="stat">
           <div class="stat-num" id="statCost">0</div>
-          <div class="stat-lbl">Costo total</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-num" id="statCompletion">0%</div>
-          <div class="stat-lbl">Completado</div>
+          <div class="stat-lbl">Costo</div>
         </div>
       </div>
-
-      <div class="quick-insights" aria-label="Insights rápidos">
-        <div class="insight-card">
-          <div class="insight-title">Estado general</div>
-          <div class="insight-value" id="insightHealth">Sin datos</div>
-        </div>
-
-        <div class="insight-card">
-          <div class="insight-title">Lugar más cargado</div>
-          <div class="insight-value" id="insightPlace">Sin datos</div>
-        </div>
-
-        <div class="insight-card">
-          <div class="insight-title">Categoría dominante</div>
-          <div class="insight-value" id="insightCategory">Sin datos</div>
-        </div>
-
-        <div class="insight-card">
-          <div class="insight-title">Próximo foco</div>
-          <div class="insight-value" id="insightFocus">Sin datos</div>
-        </div>
-
-        <div class="insight-card">
-          <div class="insight-title">Lo más estancado</div>
-          <div class="insight-value" id="insightStalled">Sin datos</div>
-        </div>
       </div>
+
+      <div class="progress-row" aria-label="Progreso">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-lbl"><span id="statCompletion">0%</span> completado</div>
+      </div>
+
+      <dl class="insight-strip" aria-label="Insights rápidos">
+        <div class="insight">
+          <dt>Estado</dt>
+          <dd id="insightHealth">Sin datos</dd>
+        </div>
+
+        <div class="insight">
+          <dt>Próximo foco</dt>
+          <dd id="insightFocus">Sin datos</dd>
+        </div>
+
+        <div class="insight">
+          <dt>Lo más estancado</dt>
+          <dd id="insightStalled">Sin datos</dd>
+        </div>
+
+        <div class="insight">
+          <dt>Lugar más cargado</dt>
+          <dd id="insightPlace">Sin datos</dd>
+        </div>
+
+        <div class="insight">
+          <dt>Categoría dominante</dt>
+          <dd id="insightCategory">Sin datos</dd>
+        </div>
+      </dl>
     </section>
 
     <!-- FOCO: una cosa por lugar -->
@@ -322,8 +330,6 @@
 
         <div class="list-toolbar" aria-label="Acciones de lista">
           <div class="toolbar-chip" id="resultsCount">0 tareas</div>
-          <button id="btnExpandAll" class="btn ghost" type="button">Expandir</button>
-          <button id="btnCollapseAll" class="btn ghost" type="button">Compactar</button>
         </div>
       </div>
 
@@ -456,16 +462,6 @@
             <input id="nextHint" type="text" disabled />
           </div>
 
-          <!-- preparado para mejoras futuras -->
-          <div class="field span-2">
-            <label for="taskChecklistPreview">Checklist</label>
-            <textarea
-              id="taskChecklistPreview"
-              rows="2"
-              placeholder="Próximamente: subtareas o pasos rápidos..."
-              disabled
-            ></textarea>
-          </div>
         </div>
       </div>
 
@@ -478,21 +474,6 @@
         <button type="submit" class="btn primary">Guardar</button>
       </div>
     </form>
-  </dialog>
-
-  <!-- MODAL PLACEHOLDER PARA STATS AVANZADAS -->
-  <dialog id="statsModalShell" class="modal" aria-label="Estadísticas avanzadas" hidden>
-    <div class="modal-card">
-      <div class="modal-head">
-        <div>
-          <div class="modal-title">Estadísticas avanzadas</div>
-          <div class="modal-sub">Comparativos e insights generales</div>
-        </div>
-      </div>
-      <div class="modal-body">
-        <div id="statsMount"></div>
-      </div>
-    </div>
   </dialog>
 
   <footer class="footer" role="contentinfo">

@@ -395,6 +395,7 @@ const statRecurring = $("#statRecurring");
 const statCost = $("#statCost");
 const statCompletion = $("#statCompletion");
 const statStalled = $("#statStalled");
+const progressFill = $("#progressFill");
 
 const summaryContext = $("#summaryContext");
 const insightHealth = $("#insightHealth");
@@ -411,15 +412,12 @@ const btnNew = $("#btnNew");
 const btnExport = $("#btnExport");
 const btnExportCsv = $("#btnExportCsv");
 const importFile = $("#importFile");
-const btnSeed = $("#btnSeed");
 const btnStats = $("#btnStats");
 const btnSettings = $("#btnSettings");
 const moreMenu = $("#moreMenu");
 
 const viewDetailed = $("#viewDetailed");
 const viewCompact = $("#viewCompact");
-const btnExpandAll = $("#btnExpandAll");
-const btnCollapseAll = $("#btnCollapseAll");
 
 const modal = $("#taskModal");
 const form = $("#taskForm");
@@ -688,65 +686,68 @@ function taskMatchesFilters(t) {
   return true;
 }
 
-function sortTasks(a, b) {
-  const mode = sortBy?.value || "smart";
+/* Ordenar con las claves precalculadas una sola vez por tarea,
+   en vez de reparsear fechas en cada comparación. */
+function sortDecorate(t) {
+  return {
+    task: t,
+    updated: Date.parse(t.updatedAt ?? t.createdAt ?? 0) || 0,
+    cost: parseCost(t.cost),
+    due: t.dueDate || "9999-12-31",
+    pri: clampInt(t.priority, 1, 3, 2),
+    age: taskAgeDays(t),
+    score: urgencyScore(t),
+    closed: t.status === "done" ? 1 : 0,
+    title: t.title || ""
+  };
+}
 
-  const updatedA = Date.parse(a.updatedAt ?? a.createdAt ?? 0) || 0;
-  const updatedB = Date.parse(b.updatedAt ?? b.createdAt ?? 0) || 0;
-  const costA = parseCost(a.cost);
-  const costB = parseCost(b.cost);
-  const dueA = a.dueDate || "9999-12-31";
-  const dueB = b.dueDate || "9999-12-31";
-  const priA = Number(a.priority ?? 2);
-  const priB = Number(b.priority ?? 2);
+function cmpDue(a, b) {
+  return a < b ? -1 : (a > b ? 1 : 0);
+}
 
+function compareDecorated(a, b, mode) {
   switch (mode) {
     case "updated_desc":
-      return updatedB - updatedA;
+      return b.updated - a.updated;
     case "updated_asc":
-      return updatedA - updatedB;
+      return a.updated - b.updated;
     case "priority_desc":
-      return priB - priA || updatedB - updatedA;
+      return b.pri - a.pri || b.updated - a.updated;
     case "priority_asc":
-      return priA - priB || updatedB - updatedA;
+      return a.pri - b.pri || b.updated - a.updated;
     case "due_asc":
-      return compareText(dueA, dueB) || updatedB - updatedA;
+      return cmpDue(a.due, b.due) || b.updated - a.updated;
     case "due_desc":
-      return compareText(dueB, dueA) || updatedB - updatedA;
+      return cmpDue(b.due, a.due) || b.updated - a.updated;
     case "cost_desc":
-      return costB - costA || updatedB - updatedA;
+      return b.cost - a.cost || b.updated - a.updated;
     case "cost_asc":
-      return costA - costB || updatedB - updatedA;
+      return a.cost - b.cost || b.updated - a.updated;
     case "title_asc":
-      return compareText(a.title, b.title) || updatedB - updatedA;
-    case "stalled_desc": {
+      return compareText(a.title, b.title) || b.updated - a.updated;
+    case "stalled_desc":
       // Lo hecho no está estancado, así que no compite por antigüedad.
-      const closedA = a.status === "done" ? 1 : 0;
-      const closedB = b.status === "done" ? 1 : 0;
-      if (closedA !== closedB) return closedA - closedB;
-      return taskAgeDays(b) - taskAgeDays(a) || urgencyScore(b) - urgencyScore(a);
-    }
+      return a.closed - b.closed || b.age - a.age || b.score - a.score;
     case "smart":
-    default: {
+    default:
       // Pendiente y en proceso compiten juntos; solo "hecho" se va al final.
-      const closedA = a.status === "done" ? 1 : 0;
-      const closedB = b.status === "done" ? 1 : 0;
-      if (closedA !== closedB) return closedA - closedB;
-
-      if (closedA === 1) return updatedB - updatedA;
-
-      const scoreA = urgencyScore(a);
-      const scoreB = urgencyScore(b);
-      if (scoreA !== scoreB) return scoreB - scoreA;
-
-      const ageA = taskAgeDays(a);
-      const ageB = taskAgeDays(b);
-      if (ageA !== ageB) return ageB - ageA;
-
-      if (dueA !== dueB) return compareText(dueA, dueB);
-      return updatedB - updatedA;
-    }
+      if (a.closed !== b.closed) return a.closed - b.closed;
+      if (a.closed === 1) return b.updated - a.updated;
+      return (
+        b.score - a.score ||
+        b.age - a.age ||
+        cmpDue(a.due, b.due) ||
+        b.updated - a.updated
+      );
   }
+}
+
+function sortTasksList(tasks, mode = sortBy?.value || "smart") {
+  return tasks
+    .map(sortDecorate)
+    .sort((a, b) => compareDecorated(a, b, mode))
+    .map((d) => d.task);
 }
 
 function badge(text, cls = "") {
@@ -869,6 +870,11 @@ function renderStats() {
   if (statStalled) statStalled.textContent = String(stats.stalled);
   if (statCost) statCost.textContent = formatCOP(stats.totalCost);
   if (statCompletion) statCompletion.textContent = formatPercent(stats.completion);
+  if (progressFill) progressFill.style.width = `${Math.round(stats.completion)}%`;
+
+  // Sin nada que atender, las cifras de alarma se apagan.
+  statOverdue?.closest(".lead")?.classList.toggle("is-calm", stats.overdue === 0);
+  statStalled?.closest(".lead")?.classList.toggle("is-calm", stats.stalled === 0);
 
   if (summaryContext) {
     summaryContext.textContent =
@@ -1032,20 +1038,16 @@ function renderTaskCard(t) {
   const badgesBox = document.createElement("div");
   badgesBox.className = "badges";
 
-  badgesBox.appendChild(badge(getPlaceName(t.placeId), "muted"));
-  badgesBox.appendChild(badge(typeLabel(t.type), "muted"));
-  badgesBox.appendChild(badge(t.category || "General", "muted"));
-  badgesBox.appendChild(badge(priorityLabel(t.priority), `pri-${t.priority || 2}`));
+  // Primero lo que cambia y urge; al final lo estructural.
+  // Los valores por defecto (categoría "General", prioridad "Media") no se
+  // muestran: salían en casi todas las tarjetas sin decir nada.
   badgesBox.appendChild(badge(statusLabel(t.status), t.status));
 
   if (t.dueDate) {
-    badgesBox.appendChild(badge(`Vence: ${t.dueDate}`, isOverdue(t) ? "overdue" : "muted"));
-  }
-  if (parseCost(t.cost) > 0) {
-    badgesBox.appendChild(badge(formatCOP(t.cost), "muted"));
-  }
-  if (t.recurring?.enabled) {
-    badgesBox.appendChild(badge(`Recurrente ${t.recurring.everyDays}d`, "recurring"));
+    badgesBox.appendChild(badge(
+      isOverdue(t) ? `Venció: ${t.dueDate}` : `Vence: ${t.dueDate}`,
+      isOverdue(t) ? "overdue" : "muted"
+    ));
   }
   if (isDueSoon(t, 7) && !isOverdue(t)) {
     badgesBox.appendChild(badge("Pronto", "muted"));
@@ -1054,8 +1056,29 @@ function renderTaskCard(t) {
   const level = stallLevel(t);
   if (level > 0) {
     const age = humanAge(taskAgeDays(t));
-    const text = level === 3 ? `⏳ Lleva ${age} aquí` : `⏳ Lleva ${age}`;
-    badgesBox.appendChild(badge(text, `stale stale-${level}`));
+    badgesBox.appendChild(badge(
+      level === 3 ? `⏳ Lleva ${age} aquí` : `⏳ Lleva ${age}`,
+      `stale stale-${level}`
+    ));
+  }
+
+  if (clampInt(t.priority, 1, 3, 2) !== 2) {
+    badgesBox.appendChild(badge(priorityLabel(t.priority), `pri-${t.priority}`));
+  }
+
+  badgesBox.appendChild(badge(getPlaceName(t.placeId), "muted"));
+  badgesBox.appendChild(badge(typeLabel(t.type), "muted"));
+
+  const category = t.category || "General";
+  if (category !== "General") {
+    badgesBox.appendChild(badge(category, "muted"));
+  }
+
+  if (parseCost(t.cost) > 0) {
+    badgesBox.appendChild(badge(formatCOP(t.cost), "muted"));
+  }
+  if (t.recurring?.enabled) {
+    badgesBox.appendChild(badge(`Recurrente ${t.recurring.everyDays}d`, "recurring"));
   }
 
   head.appendChild(badgesBox);
@@ -1068,13 +1091,10 @@ function renderTaskCard(t) {
     left.appendChild(notes);
   }
 
+  // La fecha límite y la antigüedad ya salen como badge; aquí no se repiten.
   const meta = document.createElement("div");
   meta.className = "meta";
-  meta.innerHTML = [
-    `Actualizado: ${escapeHTML(formatDate(t.updatedAt || t.createdAt))}`,
-    t.createdAt ? `Creado: ${escapeHTML(formatDate(t.createdAt))}` : "",
-    t.dueDate ? `Fecha límite: ${escapeHTML(t.dueDate)}` : ""
-  ].filter(Boolean).join(" • ");
+  meta.textContent = `Actualizado: ${formatDate(t.updatedAt || t.createdAt)}`;
   left.appendChild(meta);
 
   const right = document.createElement("div");
@@ -1131,10 +1151,7 @@ function render() {
   if (!list || !empty) return;
 
   const scopeTasks = getScopeTasks();
-  const items = scopeTasks
-    .filter(taskMatchesFilters)
-    .slice()
-    .sort(sortTasks);
+  const items = sortTasksList(scopeTasks.filter(taskMatchesFilters));
 
   renderListMeta(items, scopeTasks.length);
 
@@ -1275,10 +1292,7 @@ function exportCSV() {
     ]
   ];
 
-  const tasks = getScopeTasks()
-    .filter(taskMatchesFilters)
-    .slice()
-    .sort(sortTasks);
+  const tasks = sortTasksList(getScopeTasks().filter(taskMatchesFilters));
 
   tasks.forEach((t) => {
     rows.push([
@@ -1470,8 +1484,10 @@ function openStats() {
 
   const scopeId = getScopePlaceId();
   const scopeName = scopeId === "all" ? "Todos los lugares" : getPlaceName(scopeId);
-  const scopeStats = computeStats(scopeId);
-  const globalStats = computeStats("all");
+
+  const scopeTasksForStats = getScopeTasks();
+  const scopeStats = computeStatsFromTasks(scopeTasksForStats);
+  const globalStats = scopeId === "all" ? scopeStats : computeStats("all");
 
   const body = dlg.querySelector("#statsBody");
   const sub = dlg.querySelector("#statsSub");
@@ -1486,13 +1502,7 @@ function openStats() {
     20
   );
 
-  const scopeTasksForStats = scopeId === "all"
-    ? state.tasks.slice()
-    : state.tasks.filter((t) => t.placeId === scopeId);
-
-  const oldestList = scopeTasksForStats
-    .filter(isStalled)
-    .sort((a, b) => taskAgeDays(b) - taskAgeDays(a))
+  const oldestList = sortTasksList(scopeTasksForStats.filter(isStalled), "stalled_desc")
     .slice(0, 8);
 
   const oldestHTML = oldestList.length
@@ -1827,6 +1837,20 @@ function renderSettingsLists() {
 /* =========================
    PWA
 ========================= */
+/* Atajos del manifest: ./?action=new y ./?action=settings.
+   Se limpia la URL para que recargar no vuelva a abrir el modal. */
+function handleLaunchAction() {
+  const action = new URLSearchParams(location.search).get("action");
+  if (!action) return;
+
+  if (action === "new") openModal(null);
+  else if (action === "settings") openSettings();
+
+  if (window.history?.replaceState) {
+    history.replaceState(null, "", location.pathname);
+  }
+}
+
 function registerPWA() {
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {
@@ -1851,8 +1875,6 @@ safeOn(importFile, "change", (e) => {
   if (file) importJSONFile(file);
 });
 
-if (btnSeed) safeOn(btnSeed, "click", () => seedTemplates());
-
 safeOn(btnStats, "click", () => openStats());
 safeOn(btnSettings, "click", () => openSettings());
 
@@ -1866,8 +1888,6 @@ safeOn(btnClearFilters, "click", () => {
 
 safeOn(viewDetailed, "click", () => setViewMode("detailed"));
 safeOn(viewCompact, "click", () => setViewMode("compact"));
-safeOn(btnExpandAll, "click", () => setViewMode("detailed"));
-safeOn(btnCollapseAll, "click", () => setViewMode("compact"));
 
 [
   placeSelect,
@@ -1932,4 +1952,5 @@ wireMenuClose();
 hydrateUI();
 renderViewMode();
 render();
+handleLaunchAction();
 registerPWA();
