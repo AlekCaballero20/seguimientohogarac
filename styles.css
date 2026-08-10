@@ -704,11 +704,13 @@ select{
   padding:10px 10px 14px;
 }
 
+/* El contenido va en la columna 1, apilado; las acciones arriba a la derecha.
+   Son hijos directos para que la vista compacta pueda reacomodarlos. */
 .card{
   position:relative;
   display:grid;
   grid-template-columns:minmax(0, 1fr) auto;
-  gap:12px;
+  gap:7px 12px;
   align-items:start;
   padding:14px 14px;
   margin:10px 6px;
@@ -733,6 +735,19 @@ select{
   border-radius:18px 0 0 18px;
   background:linear-gradient(180deg, rgba(96,165,250,.45), rgba(34,197,94,.34));
   opacity:.9;
+}
+
+.card > .card-title,
+.card > .badges,
+.card > .card-notes,
+.card > .meta{
+  grid-column:1;
+  min-width:0;
+}
+
+.card > .actions{
+  grid-column:2;
+  grid-row:1;
 }
 
 .card-title{
@@ -840,7 +855,6 @@ select{
 }
 
 .card-notes{
-  margin-top:7px;
   color:var(--muted);
   font-size:12px;
   line-height:1.5;
@@ -849,7 +863,7 @@ select{
 }
 
 .meta{
-  margin-top:9px;
+  margin-top:2px;
   display:flex;
   gap:10px;
   flex-wrap:wrap;
@@ -1074,8 +1088,14 @@ select{
     grid-template-columns:1fr;
   }
 
+  /* En celular, en vista detallada, las acciones bajan a su propia fila */
   .card{
     grid-template-columns:1fr;
+  }
+
+  .card > .actions{
+    grid-column:1;
+    grid-row:auto;
   }
 
   .actions{
@@ -1187,15 +1207,50 @@ select{
 
 /* =========================
    Vista Compacta
+   No es solo letra más chica: cambia la estructura. Los botones se quedan a la
+   derecha en vez de bajar a su propia fila (que es lo que hacía alta cada
+   tarjeta en el celular) y se esconde lo que describe la tarea, dejando solo lo
+   que dice si urge. Una tarjeta pasa de ~4 filas a 2.
 ========================= */
 .view-compact .card{
-  padding:10px 12px;
-  gap:6px;
+  grid-template-columns:minmax(0, 1fr) auto;
+  gap:5px 10px;
+  align-items:center;
+  padding:9px 11px;
+  margin:6px 4px;
+  border-radius:14px;
+  box-shadow:0 4px 12px rgba(15,23,42,.05);
 }
 
 .view-compact .card-notes,
-.view-compact .meta{
+.view-compact .meta,
+.view-compact .badge.is-structural{
   display:none;
+}
+
+/* Título y botones comparten la fila de arriba; los badges van debajo a lo
+   ancho. Si los badges comparten fila con los botones se apilan en tres
+   líneas, y ahí se pierde toda la ganancia de altura. */
+.view-compact .card > .card-title{
+  grid-column:1;
+  grid-row:1;
+}
+
+.view-compact .card > .actions{
+  grid-column:2;
+  grid-row:1;
+  align-self:center;
+  justify-self:end;
+}
+
+.view-compact .card > .badges{
+  grid-column:1 / -1;
+  grid-row:2;
+}
+
+.view-compact h3{
+  font-size:13px;
+  line-height:1.25;
 }
 
 .view-compact .badges{
@@ -1207,16 +1262,14 @@ select{
   padding:2px 6px;
 }
 
-.view-compact h3{
-  font-size:13px;
-}
-
 .view-compact .actions{
-  gap:6px;
+  gap:5px;
+  flex-wrap:nowrap;
 }
 
 .view-compact .actions .pill{
   min-height:36px;
-  padding:4px 6px;
+  padding:4px 8px;
   font-size:11px;
+  box-shadow:none;
 }

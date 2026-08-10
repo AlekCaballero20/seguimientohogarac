@@ -10,7 +10,7 @@
 
 "use strict";
 
-const VERSION = "1.5.0";
+const VERSION = "1.6.0";
 const CACHE_PREFIX = "hogares-pwa";
 
 const CACHE_APP = `${CACHE_PREFIX}-app-${VERSION}`;

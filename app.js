@@ -1027,7 +1027,9 @@ function renderTaskCard(t) {
   if (t.status === "done") card.classList.add("is-done");
   if (t.status === "doing") card.classList.add("is-doing");
 
-  const left = document.createElement("div");
+  // Título, badges, notas, meta y acciones van como hijos directos de la
+  // tarjeta (no anidados) para que el grid pueda reacomodarlos: la vista
+  // compacta necesita poner badges y botones en la misma fila.
   const head = document.createElement("div");
   head.className = "card-title";
 
@@ -1067,35 +1069,38 @@ function renderTaskCard(t) {
   }
 
   badgesBox.appendChild(badge(getPlaceName(t.placeId), "muted"));
-  badgesBox.appendChild(badge(typeLabel(t.type), "muted"));
+
+  // "is-structural": describe la tarea, no su urgencia. La vista compacta
+  // los esconde para que los badges quepan en una sola línea.
+  badgesBox.appendChild(badge(typeLabel(t.type), "muted is-structural"));
 
   const category = t.category || "General";
   if (category !== "General") {
-    badgesBox.appendChild(badge(category, "muted"));
+    badgesBox.appendChild(badge(category, "muted is-structural"));
   }
 
   if (parseCost(t.cost) > 0) {
-    badgesBox.appendChild(badge(formatCOP(t.cost), "muted"));
+    badgesBox.appendChild(badge(formatCOP(t.cost), "muted is-structural"));
   }
   if (t.recurring?.enabled) {
-    badgesBox.appendChild(badge(`Recurrente ${t.recurring.everyDays}d`, "recurring"));
+    badgesBox.appendChild(badge(`Recurrente ${t.recurring.everyDays}d`, "recurring is-structural"));
   }
 
-  head.appendChild(badgesBox);
-  left.appendChild(head);
+  card.appendChild(head);
+  card.appendChild(badgesBox);
 
   if (t.notes) {
     const notes = document.createElement("div");
     notes.className = "card-notes";
     notes.textContent = t.notes;
-    left.appendChild(notes);
+    card.appendChild(notes);
   }
 
   // La fecha límite y la antigüedad ya salen como badge; aquí no se repiten.
   const meta = document.createElement("div");
   meta.className = "meta";
   meta.textContent = `Actualizado: ${formatDate(t.updatedAt || t.createdAt)}`;
-  left.appendChild(meta);
+  card.appendChild(meta);
 
   const right = document.createElement("div");
   right.className = "actions";
@@ -1136,7 +1141,6 @@ function renderTaskCard(t) {
   right.appendChild(btnEdit);
   right.appendChild(btnTrash);
 
-  card.appendChild(left);
   card.appendChild(right);
 
   return card;
